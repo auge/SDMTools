@@ -52,31 +52,51 @@ SEXP projectedPS(SEXP tdata, SEXP IDs)
 	for (row=0; row<nrow; row++)	{
 		for (col=0; col<ncol; col++)	{	
 			tval = data[row+nrow*col];
-			if (tval!=NA_INTEGER)	{
-				np = ni = 0;
-				//go through the eight neighbouring cells and collect data
-				rook[0] = (row>0) ? data[(row-1)+nrow*(col)]:-9999;
-				rook[1] = (col<ncol-1) ? data[(row)+nrow*(col+1)]:-9999;
-				rook[2] = (row<nrow-1) ? data[(row+1)+nrow*(col)]:-9999;
-				rook[3] = (col>0) ? data[(row)+nrow*(col-1)]:-9999;
-				queen[0] = (row>0 && col<ncol-1) ? data[(row-1)+nrow*(col+1)]:-9999;
-				queen[1] = (row<nrow-1 && col<ncol-1) ? data[(row+1)+nrow*(col+1)]:-9999;
-				queen[2] = (row<nrow-1 && col>0) ? data[(row+1)+nrow*(col-1)]:-9999;
-				queen[3] = (row>0 && col>0) ? data[(row-1)+nrow*(col-1)]:-9999;
-				//cycle through and get temp values of edges
-				for (ii=0;ii<4;ii++){if (tval==rook[ii]){ni++;} else {np++;}};
-				//check if cell is acore cell
-				core=1;	if (np==0){core=0;for (ii=0;ii<4;ii++){if (tval!=queen[ii]) core++;}}
-				//assign the values to the proper patch id info
-				for (ii=0;ii<npatch;ii++){
-					if (ID[ii]==tval){
-						ncell[ii] ++;
-						nperim[ii] += np;
-						nintern[ii] += ni;
-						if (core==0) ncellcore[ii] ++;
-						break;
+			if (tval == NA_INTEGER)
+				continue;
+			np = ni = 0;
+			//go through the eight neighbouring cells and collect data
+			rook[0] = (row>0) ? data[(row-1)+nrow*(col)]:-9999;
+			rook[1] = (col<ncol-1) ? data[(row)+nrow*(col+1)]:-9999;
+			rook[2] = (row<nrow-1) ? data[(row+1)+nrow*(col)]:-9999;
+			rook[3] = (col>0) ? data[(row)+nrow*(col-1)]:-9999;
+			queen[0] = (row>0 && col<ncol-1) ? data[(row-1)+nrow*(col+1)]:-9999;
+			queen[1] = (row<nrow-1 && col<ncol-1) ? data[(row+1)+nrow*(col+1)]:-9999;
+			queen[2] = (row<nrow-1 && col>0) ? data[(row+1)+nrow*(col-1)]:-9999;
+			queen[3] = (row>0 && col>0) ? data[(row-1)+nrow*(col-1)]:-9999;
+			//cycle through and get temp values of edges
+			for (ii=0;ii<4;ii++){
+				if (rook[ii] == NA_INTEGER) { //inalid neighbor, should not count as patch
+					continue;
+				}
+				if (tval==rook[ii]) {
+					ni++;
+				}
+				else {
+					np++;
+				}
+			};
+			//check if cell is acore cell
+			core=1;
+			if (np==0) { //no edges present
+				core=0;
+				for (ii=0;ii<4;ii++) {//check diagonals
+					if (queen[ii] == NA_INTEGER) //diagonal is invalid
+						continue;
+					if (tval!=queen[ii]) {
+						core++;
 					}
-				}				
+				}
+			}
+			//assign the values to the proper patch id info
+			for (ii=0;ii<npatch;ii++){
+				if (ID[ii]==tval){
+					ncell[ii] ++;
+					nperim[ii] += np;
+					nintern[ii] += ni;
+					if (core==0) ncellcore[ii] ++;
+					break;
+				}
 			}
 		}
 	}
